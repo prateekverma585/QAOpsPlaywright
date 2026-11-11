@@ -1,0 +1,97 @@
+const{test, expect} = require('@playwright/test');
+
+
+test('Browser Context-Validating Error Login',async ({page})=>
+{           
+
+            await page.goto("https://rahulshettyacademy.com/client/");
+
+            await page.locator("#userEmail").fill("veenarecordsinc@gmail.com"); 
+            await page.locator("#userPassword").fill("KrishnaHari@123");
+            await page.locator("[type='submit']").click();
+            //ex-20 : Implementing wait
+            await page.waitForLoadState("networkidle");
+
+            // or use below code for wait
+            // await page.locator(".card-body b").waitFor(); // this works for only one element
+            // but here it's returning multiple elements, so replace with finding one element, see below
+            // await page.locator(".card-body b").first().waitFor(); // you can replace first to last
+
+
+
+            const titles = await page.locator(".card-body b").allTextContents();
+            console.log(titles);
+
+
+            
+
+});
+
+test('Client App Login',async ({page})=>
+{   const email = "veenarecordsinc@gmail.com";
+    const products = await page.locator(".card-body ");
+    const productName = "ZARA COAT 3";
+    await page.goto("https://rahulshettyacademy.com/client");
+    await page.getByPlaceholder("email@example.com").fill(email);
+    await page.getByPlaceholder("enter your passsword").fill("KrishnaRadha@123");
+    await page.getByRole("button",{name:"Login"}).click();
+    await page.waitForLoadState('networkidle');
+    await page.locator(".card-body b").first().waitFor();
+    const titles = await page.locator(".card-body b").allTextContents();
+
+    // Filtering the product and adding it to cart
+    await page.locator(".card-body").filter({hasText : productName}).getByRole("button",{name: " Add To Cart"}).click();
+    
+
+
+
+    //Ex-31
+    await page.getByRole("listitems").page.getByRole("button",{name:"Cart"}).click();
+    await page.locator("div li").first().waitFor();
+    await expect (page.getByText(productName)).toBeVisible();
+
+    await page.getByRole("button",{name:"Checkout"}).click();
+    await page.getByPlaceholder("Select Country").pressSequentially("ind",{ delay: 150 });
+    await page.getByRole("button",{name :"India"}).nth(1).click();
+    await expect(page.locator(".mt-5 [type='text']").first()).toHaveText(email);
+
+    const dropdown1 = page.locator('[class*=ddl]').first();
+    await dropdown1.selectOption("09");
+
+    const dropdown2 = page.locator('[class*=ddl]').last();
+    await dropdown2.selectOption("30");
+
+    await page.locator('//div[@class="payment__cc"]//div[2]//input[1]').fill("344");
+    await page.locator('.form__cc [type=text]').nth(2).fill("Prateek Verma");
+    await page.locator('.form__cc [type=text]').nth(3).fill("PRAT10");
+    await page.locator('[class*=btn-primary]').click();
+
+    await page.getByText("PLACE ORDER").click();
+    await expect(page.getByText("Thankyou for the order.")).toBeVisible();
+    const order_ID = await page.locator('.em-spacer-1 .ng-star-inserted').textContent();
+    console.log(order_ID);
+
+
+    // Navigating to orders page
+    await page.locator('.btn.btn-custom').nth(1).click();
+    await page.locator('tbody').waitFor();
+
+    const orderRows = page.locator('.tbody tr');
+
+    for(let i=0; i<orderRows.count; i++){
+       const actualOrder = await orderRows.nth(i).locator('th').textContent();
+
+       if(actualOrder.includes(order_ID)){
+         await orderRows.nth(i).locator('[class*=btn-primary]').click();
+         break;
+       }
+       
+    }
+   
+    const orderDetails = page.locator('[class*=-main]').textContent();
+    expect(order_ID).includes(orderDetails).toBeTruthy();
+
+   
+    
+});
+
